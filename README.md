@@ -1,559 +1,270 @@
-# ApiController - Documentation Complète
+# Laravel API Response Helper
 
-## 📋 Vue d'ensemble
-
-`ApiController` est une classe abstraite servant de base pour tous les contrôleurs API de l'application. Elle fournit une gestion standardisée des réponses JSON, du logging et de la gestion des erreurs.
-
-**Localisation** : `app/Http/Controllers/Api/ApiController.php`
+Ensemble de classes utilitaires pour standardiser les réponses JSON d'une API Laravel. Fournit un helper statique, des fonctions globales et un contrôleur de base prêt à l'emploi.
 
 ---
 
-## 🎯 Objectifs Principaux
+## Fonctionnalités
 
-1. **Normalisation des réponses API** : Format JSON cohérent pour toutes les réponses
-2. **Logging intelligent** : Traçabilité automatique de chaque requête et réponse
-3. **Gestion des erreurs** : Centralisation de la gestion des codes HTTP et erreurs
-4. **Sécurité** : Protection des données sensibles dans les logs
-5. **Maintenabilité** : Réduction de la duplication de code dans les contrôleurs
+- Réponses JSON structurées et uniformes sur tout le projet
+- Support complet des codes HTTP via l'enum `HttpStatus`
+- Journalisation automatique de chaque réponse (niveau adapté au code HTTP)
+- Gestion des réponses paginées avec métadonnées et liens
+- Fonctions globales `api_*` utilisables partout dans l'application
+- Contrôleur de base `ApiController` à étendre dans vos controllers
 
 ---
 
-## 📦 Structure de Réponse JSON
+## Fichiers
 
-### Format Standard
+| Fichier | Emplacement |
+|---------|-------------|
+| Enum HTTP | `app/Enums/HttpStatus.php` |
+| Helper statique | `app/Support/Helpers/ApiHelper.php` |
+| Fonctions globales | `app/Support/Helpers/ApiHelperFunctions.php` |
+| Contrôleur de base | `app/Core/Controllers/ApiController.php` |
+
+---
+
+## Installation
+
+**1. Copier les fichiers dans votre projet**
+
+**2. Enregistrer les fonctions globales dans `composer.json` :**
 
 ```json
-{
-  "success": true,
-  "data": { /* données */ },
-  "message": "Description de la réponse",
-  "meta": { /* métadonnées optionnelles */ },
-  "links": { /* liens optionnels */ },
-  "errors": null
+"autoload": {
+    "files": [
+        "app/Support/Helpers/ApiHelperFunctions.php"
+    ]
 }
 ```
 
-### Exemple Succès (200)
+**3. Mettre à jour l'autoloader :**
 
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "name": "John Doe",
-    "email": "john@example.com"
-  },
-  "message": "Utilisateur récupéré avec succès"
-}
+```bash
+composer dump-autoload
 ```
 
-### Exemple Erreur (400)
+**4. Ajouter le channel de log dans `config/logging.php` :**
 
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Erreur de validation",
-  "errors": {
-    "email": ["L'email est requis"],
-    "password": ["Le mot de passe doit contenir au moins 8 caractères"]
-  }
-}
-```
-
-### Exemple Pagination (200)
-
-```json
-{
-  "success": true,
-  "data": [ /* items */ ],
-  "message": "Utilisateurs récupérés",
-  "meta": {
-    "pagination": {
-      "total": 100,
-      "per_page": 15,
-      "current_page": 1,
-      "last_page": 7,
-      "from": 1,
-      "to": 15
-    }
-  },
-  "links": {
-    "first": "/api/users?page=1",
-    "last": "/api/users?page=7",
-    "prev": null,
-    "next": "/api/users?page=2"
-  }
-}
+```php
+'channels' => [
+    'api' => [
+        'driver'     => 'daily',
+        'path'       => storage_path('logs/api.log'),
+        'level'      => 'info',
+        'days'       => 30,
+        'permission' => 0664,
+    ],
+],
 ```
 
 ---
 
-## 🔧 Méthodes Disponibles
+## Utilisation
 
-### 1. Réponses Génériques
+### Via le contrôleur de base
 
-#### `jsonApiResponse()` - Réponse Personnalisée Complète
-
-```php
-protected function jsonApiResponse(
-    mixed $data = null,
-    int|HttpStatus $status = 200,
-    string $message = '',
-    array $errors = [],
-    array $meta = [],
-    array $links = []
-): JsonResponse
-```
-
-**Utilisation** :
-```php
-return $this->jsonApiResponse(
-    data: $user,
-    status: 201,
-    message: 'Utilisateur créé',
-    meta: ['created_at' => now()]
-);
-```
-
----
-
-### 2. Réponses Courtes (Raccourcis)
-
-#### `jsonSuccess()` - Réponse 200
+La façon recommandée. Étendez `ApiController` dans vos controllers :
 
 ```php
-protected function jsonSuccess(
-    mixed $data = null,
-    string $message = '',
-    int|HttpStatus $status = 200
-): JsonResponse
-```
-
-**Utilisation** :
-```php
-public function show(User $user)
-{
-    return $this->jsonSuccess(
-        data: $user,
-        message: 'Utilisateur trouvé'
-    );
-}
-```
-
----
-
-#### `jsonError()` - Réponse d'Erreur Générique
-
-```php
-protected function jsonError(
-    string $message = '',
-    int|HttpStatus $status = 400,
-    array $errors = [],
-    mixed $data = null
-): JsonResponse
-```
-
-**Utilisation** :
-```php
-return $this->jsonError(
-    message: 'Données invalides',
-    status: 422,
-    errors: $validator->errors()->toArray()
-);
-```
-
----
-
-### 3. Réponses Spécifiques aux Codes HTTP
-
-#### `jsonCreated()` - Réponse 201
-
-```php
-public function store(StoreUserRequest $request, UserService $service)
-{
-    $user = $service->createUser($request->validated());
-    return $this->jsonCreated($user, 'Utilisateur créé avec succès');
-}
-```
-
----
-
-#### `jsonPaginated()` - Réponse Paginée
-
-```php
-public function index(UserService $service)
-{
-    $users = $service->getAllUsers(
-        request()->query(),
-        per_page: 15
-    );
-    
-    return $this->jsonPaginated(
-        $users,
-        message: 'Utilisateurs récupérés',
-        extraMeta: ['filters' => request()->query()]
-    );
-}
-```
-
----
-
-#### `jsonValidationError()` - Réponse 422
-
-```php
-protected function jsonValidationError(
-    array $errors = [],
-    string $message = 'Erreur de validation'
-): JsonResponse
-```
-
-**Utilisation** :
-```php
-return $this->jsonValidationError(
-    errors: $request->validate([...]),
-    message: 'Données invalides'
-);
-```
-
----
-
-#### `jsonNoContent()` - Réponse 204
-
-```php
-public function destroy(User $user, UserService $service)
-{
-    $service->deleteUser($user);
-    return $this->jsonNoContent();
-}
-```
-
----
-
-#### Codes HTTP Spécifiques
-
-| Méthode | Code | Utilisation |
-|---------|------|------------|
-| `jsonUnauthorized()` | 401 | Utilisateur non authentifié |
-| `jsonForbidden()` | 403 | Accès refusé / Permission insuffisante |
-| `jsonNotFound()` | 404 | Ressource introuvable |
-| `jsonBadRequest()` | 400 | Requête malformée |
-| `jsonConflict()` | 409 | Conflit de données |
-| `jsonInternalServerError()` | 500 | Erreur serveur |
-| `jsonServiceUnavailable()` | 503 | Service indisponible |
-
----
-
-## 💡 Exemples Complets
-
-### Exemple 1 : Créer un Utilisateur
-
-```php
-namespace App\Http\Controllers\Api;
-
-use App\Http\Requests\StoreUserRequest;
-use App\Services\UserService;
+use App\Core\Controllers\ApiController;
 
 class UserController extends ApiController
 {
-    public function __construct(
-        private UserService $userService
-    ) {}
+    public function index()
+    {
+        $users = User::paginate(15);
+        return $this->jsonPaginated($users, 'Liste des utilisateurs');
+    }
+
+    public function show(User $user)
+    {
+        return $this->jsonSuccess($user, 'Utilisateur trouvé');
+    }
 
     public function store(StoreUserRequest $request)
     {
-        try {
-            $user = $this->userService->createUser($request->validated());
-            
-            return $this->jsonCreated(
-                data: $user,
-                message: 'Utilisateur créé avec succès'
-            );
-        } catch (\Exception $e) {
-            return $this->jsonInternalServerError(
-                message: 'Erreur lors de la création',
-                errors: config('app.debug') ? [$e->getMessage()] : []
-            );
-        }
+        $user = User::create($request->validated());
+        return $this->jsonCreated($user);
     }
-}
-```
 
----
-
-### Exemple 2 : Récupérer une Liste Paginée
-
-```php
-public function index(UserService $userService)
-{
-    try {
-        $filters = $this->request->only(['search', 'is_active', 'sort_field', 'sort_direction']);
-        $users = $userService->getAllUsers($filters, perPage: 15);
-        
-        return $this->jsonPaginated(
-            data: $users,
-            message: 'Utilisateurs récupérés',
-            extraMeta: [
-                'filters_applied' => array_filter($filters)
-            ]
-        );
-    } catch (\Exception $e) {
-        return $this->jsonInternalServerError();
-    }
-}
-```
-
----
-
-### Exemple 3 : Supprimer une Ressource
-
-```php
-public function destroy(User $user, UserService $userService)
-{
-    try {
-        $userService->deleteUser($user);
+    public function destroy(User $user)
+    {
+        $user->delete();
         return $this->jsonNoContent();
-    } catch (\Exception $e) {
-        return $this->jsonInternalServerError(
-            message: 'Impossible de supprimer l\'utilisateur'
-        );
+    }
+}
+```
+
+### Via les fonctions globales
+
+Utilisables directement dans n'importe quel fichier sans injection de dépendance :
+
+```php
+return api_success($data, 'Opération réussie');
+return api_error('Ressource introuvable', 404);
+return api_created($user);
+return api_paginated($users->paginate(15));
+return api_no_content();
+```
+
+### Via le helper statique
+
+```php
+use App\Support\Helpers\ApiHelper;
+
+return ApiHelper::jsonSuccess($data, 'Opération réussie');
+return ApiHelper::jsonError('Accès refusé', HttpStatus::FORBIDDEN);
+return ApiHelper::jsonPaginated($paginator, 'Résultats');
+```
+
+---
+
+## Format de réponse
+
+Toutes les réponses suivent la même structure :
+
+```json
+{
+    "success": true,
+    "data": {},
+    "message": "Opération réussie",
+    "meta": null,
+    "links": null,
+    "errors": null
+}
+```
+
+Les clés `meta`, `links` et `errors` sont omises de la réponse si elles sont vides.
+
+### Réponse paginée
+
+```json
+{
+    "success": true,
+    "data": [...],
+    "message": "Liste des utilisateurs",
+    "meta": {
+        "pagination": {
+            "total": 100,
+            "per_page": 15,
+            "current_page": 1,
+            "last_page": 7,
+            "from": 1,
+            "to": 15
+        }
+    },
+    "links": {
+        "first": "https://api.example.com/users?page=1",
+        "last": "https://api.example.com/users?page=7",
+        "prev": null,
+        "next": "https://api.example.com/users?page=2"
     }
 }
 ```
 
 ---
 
-### Exemple 4 : Gestion des Erreurs 404
+## Méthodes disponibles
+
+### Succès
+
+| Méthode | Code | Description |
+|---------|------|-------------|
+| `jsonSuccess($data, $message, $status)` | 200 | Réponse générique de succès |
+| `jsonCreated($data, $message)` | 201 | Ressource créée |
+| `jsonNoContent()` | 204 | Pas de contenu à retourner |
+| `jsonPaginated($paginator, $message)` | 200 | Données paginées avec métadonnées |
+
+### Erreurs client
+
+| Méthode | Code | Description |
+|---------|------|-------------|
+| `jsonBadRequest($message, $errors)` | 400 | Requête mal formée |
+| `jsonUnauthorized($message)` | 401 | Non authentifié |
+| `jsonForbidden($message)` | 403 | Accès refusé |
+| `jsonNotFound($message)` | 404 | Ressource introuvable |
+| `jsonConflict($message, $data)` | 409 | Conflit d'état |
+| `jsonValidationError($errors, $message)` | 422 | Erreur de validation |
+
+### Erreurs serveur
+
+| Méthode | Code | Description |
+|---------|------|-------------|
+| `jsonInternalServerError($message, $errors)` | 500 | Erreur interne |
+| `jsonServiceUnavailable($message)` | 503 | Service indisponible |
+
+### Générique
+
+| Méthode | Description |
+|---------|-------------|
+| `jsonError($message, $status, $errors, $data)` | Erreur avec code personnalisé |
+| `jsonApiResponse($data, $status, $message, $errors, $meta, $links)` | Réponse complète personnalisable |
+
+---
+
+## Fonctions globales disponibles
+
+| Fonction | Équivalent |
+|----------|-----------|
+| `api_response(...)` | `ApiHelper::jsonApiResponse(...)` |
+| `api_success(...)` | `ApiHelper::jsonSuccess(...)` |
+| `api_error(...)` | `ApiHelper::jsonError(...)` |
+| `api_paginated(...)` | `ApiHelper::jsonPaginated(...)` |
+| `api_created(...)` | `ApiHelper::jsonCreated(...)` |
+| `api_unauthorized(...)` | `ApiHelper::jsonUnauthorized(...)` |
+| `api_forbidden(...)` | `ApiHelper::jsonForbidden(...)` |
+| `api_not_found(...)` | `ApiHelper::jsonNotFound(...)` |
+| `api_validation_error(...)` | `ApiHelper::jsonValidationError(...)` |
+| `api_no_content()` | `ApiHelper::jsonNoContent()` |
+| `api_bad_request(...)` | `ApiHelper::jsonBadRequest(...)` |
+| `api_conflict(...)` | `ApiHelper::jsonConflict(...)` |
+| `api_service_unavailable(...)` | `ApiHelper::jsonServiceUnavailable(...)` |
+| `api_internal_server_error(...)` | `ApiHelper::jsonInternalServerError(...)` |
+
+---
+
+## Enum HttpStatus
+
+L'enum `HttpStatus` couvre l'intégralité des codes HTTP (1xx à 5xx) et expose une méthode `message()` qui retourne la description en français du code.
 
 ```php
-public function show(User $user)
-{
-    if (!$user) {
-        return $this->jsonNotFound('Utilisateur non trouvé');
-    }
-    
-    return $this->jsonSuccess(
-        data: $user,
-        message: 'Utilisateur trouvé'
-    );
-}
+use App\Enums\HttpStatus;
+
+HttpStatus::OK->value;        // 200
+HttpStatus::NOT_FOUND->value; // 404
+HttpStatus::OK->message();    // 'Requête traitée avec succès.'
+
+// Utilisable directement dans les méthodes helper
+return $this->jsonError('Introuvable', HttpStatus::NOT_FOUND);
 ```
 
 ---
 
-### Exemple 5 : Gestion des Permissions
+## Journalisation
 
-```php
-public function update(Request $request, User $user)
-{
-    if (!$request->user()->can('update', $user)) {
-        return $this->jsonForbidden('Vous n\'avez pas accès à cet utilisateur');
-    }
-    
-    // Mise à jour...
-    return $this->jsonSuccess($user, 'Utilisateur mis à jour');
-}
+Chaque réponse est automatiquement journalisée dans le channel `api` avec un niveau adapté au code HTTP :
+
+| Plage | Niveau |
+|-------|--------|
+| 2xx / 3xx | `info` |
+| 4xx | `warning` |
+| 5xx | `error` |
+
+Format de log :
+
 ```
+[2026-02-19 13:45:12] local.INFO: [API] [INFO] GET /api/users - 200 Liste des utilisateurs
+{"endpoint":"/api/users","method":"GET","ip":"127.0.0.1","user_id":1,"status":200,"data_count":15}
+```
+
+> Les codes `204 No Content` et `304 Not Modified` ne sont pas journalisés par défaut depuis `ApiController`.
 
 ---
 
-## 📊 Logging Automatique
+## Prérequis
 
-### Logs Générés Automatiquement
-
-Chaque appel à `jsonApiResponse()` génère un log structuré :
-
-```
-[INFO] GET /api/users/1 - 200 Utilisateur trouvé
-```
-
-**Contexte loggé** :
-- `method` : Méthode HTTP (GET, POST, etc.)
-- `endpoint` : URI de la requête
-- `status` : Code HTTP
-- `message` : Message de réponse
-- `user_id` : ID de l'utilisateur authentifié
-- `ip` : Adresse IP du client
-- `user_agent` : User-Agent du navigateur
-- `data_type` : Type de données (array, object, etc.)
-- `data_count` : Nombre d'items (si applicable)
-- `error_count` : Nombre d'erreurs (si applicable)
-
-### Niveaux de Log
-
-| Code HTTP | Niveau | Couleur |
-|-----------|--------|--------|
-| 200-299 | `info` | ℹ️ |
-| 300-399 | `info` | ℹ️ |
-| 400-499 | `warning` | ⚠️ |
-| 500-599 | `error` | ❌ |
-
-### Protection des Données Sensibles
-
-Les données suivantes sont automatiquement exclues des logs :
-
-- `password`
-- `password_confirmation`
-- `token`
-- `api_key`
-
----
-
-## 🔐 Sécurité
-
-### Filtrage Automatique
-
-```php
-// Ces champs ne sont jamais loggés
-$context['input_keys'] = array_keys(
-    $request->except(['password', 'password_confirmation', 'token', 'api_key'])
-);
-```
-
-### Gestion des Erreurs en Produit
-
-```php
-// Si app.debug = false, les exceptions ne sont pas retournées
-'errors' => config('app.debug') ? ['exception' => $th->getMessage()] : [],
-```
-
----
-
-## 🧪 Intégration avec HttpStatus Enum
-
-L'application utilise un enum `HttpStatus` pour typage fort :
-
-```php
-namespace App\Enums;
-
-enum HttpStatus: int {
-    case OK = 200;
-    case CREATED = 201;
-    case BAD_REQUEST = 400;
-    case UNAUTHORIZED = 401;
-    case FORBIDDEN = 403;
-    case NOT_FOUND = 404;
-    case CONFLICT = 409;
-    case UNPROCESSABLE_CONTENT = 422;
-    case INTERNAL_SERVER_ERROR = 500;
-    case SERVICE_UNAVAILABLE = 503;
-    
-    public function message(): string { /* ... */ }
-}
-```
-
-**Utilisation** :
-```php
-return $this->jsonApiResponse(
-    data: $user,
-    status: HttpStatus::CREATED  // ✅ Type-safe
-);
-```
-
----
-
-## 📝 Bonnes Pratiques
-
-### ✅ À Faire
-
-```php
-// 1. Utiliser les raccourcis appropriés
-return $this->jsonCreated($user);
-
-// 2. Toujours fournir un message explicite
-return $this->jsonSuccess(
-    data: $users,
-    message: 'Utilisateurs récupérés avec succès'
-);
-
-// 3. Inclure les erreurs de validation
-return $this->jsonValidationError(
-    errors: $validator->errors()->toArray()
-);
-
-// 4. Utiliser HttpStatus enum
-return $this->jsonApiResponse($user, HttpStatus::CREATED->value);
-```
-
-### ❌ À Éviter
-
-```php
-// ❌ Codes HTTP bruts sans message
-return response()->json(['data' => $user], 200);
-
-// ❌ Logs sensibles non filtrés
-Log::info('User created', ['password' => $password]);
-
-// ❌ Pas de gestion d'erreurs
-return $this->jsonSuccess($data, 200);  // Sans try-catch
-
-// ❌ Messages génériques
-return $this->jsonError('Erreur');
-```
-
----
-
-## 🔄 Flux Complet d'une Requête
-
-```
-1. Requête HTTP
-    ↓
-2. ApiController reçoit la requête
-    ↓
-3. Récupère le contexte (IP, user_agent, etc.)
-    ↓
-4. Appelle la méthode de contrôleur
-    ↓
-5. Utilise un raccourci (jsonSuccess, jsonError, etc.)
-    ↓
-6. Génère la réponse JSON
-    ↓
-7. Logs automatiques (niveau, message, contexte)
-    ↓
-8. Retourne la réponse au client
-```
-
----
-
-## 📞 Support & Extensions
-
-### Créer un Nouveau Raccourci
-
-```php
-// Ajouter dans ApiController
-protected function jsonTooManyRequests(string $message = 'Trop de requêtes'): JsonResponse
-{
-    return $this->jsonError($message, HttpStatus::TOO_MANY_REQUESTS->value);
-}
-```
-
-### Personnaliser la Réponse Globale
-
-```php
-// Surcharger dans votre contrôleur
-protected function jsonApiResponse(...) {
-    $response = parent::jsonApiResponse(...);
-    // Modifications personnalisées
-    return $response;
-}
-```
-
----
-
-## 📚 Résumé des Méthodes
-
-| Méthode | Paramètres | Retour | Cas d'Usage |
-|---------|-----------|--------|-----------|
-| `jsonSuccess()` | data, message, status | JSON 200 | Succès généraux |
-| `jsonCreated()` | data, message | JSON 201 | Création de ressource |
-| `jsonPaginated()` | data, message, meta | JSON 200 | Listes paginées |
-| `jsonError()` | message, status, errors | JSON 4xx/5xx | Erreurs générales |
-| `jsonValidationError()` | errors, message | JSON 422 | Erreurs de validation |
-| `jsonNotFound()` | message | JSON 404 | Ressource introuvable |
-| `jsonUnauthorized()` | message | JSON 401 | Non authentifié |
-| `jsonForbidden()` | message | JSON 403 | Accès refusé |
-| `jsonNoContent()` | - | JSON 204 | Suppression réussie |
-| `jsonConflict()` | message, data | JSON 409 | Conflit de données |
-| `jsonBadRequest()` | message, errors | JSON 400 | Requête malformée |
-| `jsonInternalServerError()` | message, errors | JSON 500 | Erreur serveur |
-| `jsonServiceUnavailable()` | message | JSON 503 | Service indisponible |
+- PHP 8.1+
+- Laravel 10+
