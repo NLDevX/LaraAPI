@@ -1,6 +1,6 @@
 <?php
 
-use App\Support\Helpers\ApiHelper;
+use App\Support\Helpers\APIHelper;
 use Illuminate\Http\JsonResponse;
 use App\Enums\HttpStatus;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -16,6 +16,7 @@ if (!function_exists('api_response')) {
      * @param array $errors
      * @param array $meta
      * @param array $links
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
     function api_response(
@@ -24,9 +25,10 @@ if (!function_exists('api_response')) {
         string $message = '',
         array $errors = [],
         array $meta = [],
-        array $links = []
+        array $links = [],
+        ?\Throwable $exception = null
     ): JsonResponse {
-        return ApiHelper::jsonApiResponse($data, $status, $message, $errors, $meta, $links);
+        return APIHelper::jsonApiResponse($data, $status, $message, $errors, $meta, $links, true, $exception);
     }
 }
 
@@ -44,7 +46,7 @@ if (!function_exists('api_success')) {
         string $message = '',
         int|HttpStatus $status = 200
     ): JsonResponse {
-        return ApiHelper::jsonSuccess($data, $message, $status);
+        return APIHelper::jsonSuccess($data, $message, $status);
     }
 }
 
@@ -56,15 +58,17 @@ if (!function_exists('api_error')) {
      * @param int|HttpStatus $status
      * @param array $errors
      * @param mixed $data
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
     function api_error(
         string $message = '',
         int|HttpStatus $status = 400,
         array $errors = [],
-        mixed $data = null
+        mixed $data = null,
+        ?\Throwable $exception = null
     ): JsonResponse {
-        return ApiHelper::jsonError($message, $status, $errors, $data);
+        return APIHelper::jsonError($message, $status, $errors, $data, true, $exception);
     }
 }
 
@@ -82,7 +86,7 @@ if (!function_exists('api_paginated')) {
         string $message = '',
         array $extraMeta = []
     ): JsonResponse {
-        return ApiHelper::jsonPaginated($data, $message, $extraMeta);
+        return APIHelper::jsonPaginated($data, $message, $extraMeta);
     }
 }
 
@@ -96,7 +100,7 @@ if (!function_exists('api_created')) {
      */
     function api_created(mixed $data = null, string $message = 'Ressource créée avec succès'): JsonResponse
     {
-        return ApiHelper::jsonCreated($data, $message);
+        return APIHelper::jsonCreated($data, $message);
     }
 }
 
@@ -105,11 +109,12 @@ if (!function_exists('api_unauthorized')) {
      * Réponse 401 Unauthorized
      *
      * @param string $message
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
-    function api_unauthorized(string $message = 'Non authentifié'): JsonResponse
+    function api_unauthorized(string $message = 'Non authentifié', ?\Throwable $exception = null): JsonResponse
     {
-        return ApiHelper::jsonUnauthorized($message);
+        return APIHelper::jsonUnauthorized($message, true, $exception);
     }
 }
 
@@ -118,11 +123,12 @@ if (!function_exists('api_forbidden')) {
      * Réponse 403 Forbidden
      *
      * @param string $message
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
-    function api_forbidden(string $message = 'Accès non autorisé'): JsonResponse
+    function api_forbidden(string $message = 'Accès non autorisé', ?\Throwable $exception = null): JsonResponse
     {
-        return ApiHelper::jsonForbidden($message);
+        return APIHelper::jsonForbidden($message, true, $exception);
     }
 }
 
@@ -131,11 +137,12 @@ if (!function_exists('api_not_found')) {
      * Réponse 404 Not Found
      *
      * @param string $message
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
-    function api_not_found(string $message = 'Ressource non trouvée'): JsonResponse
+    function api_not_found(string $message = 'Ressource non trouvée', ?\Throwable $exception = null): JsonResponse
     {
-        return ApiHelper::jsonNotFound($message);
+        return APIHelper::jsonNotFound($message, true, $exception);
     }
 }
 
@@ -145,11 +152,12 @@ if (!function_exists('api_validation_error')) {
      *
      * @param array $errors
      * @param string $message
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
-    function api_validation_error(array $errors = [], string $message = 'Erreur de validation'): JsonResponse
+    function api_validation_error(array $errors = [], string $message = 'Erreur de validation', ?\Throwable $exception = null): JsonResponse
     {
-        return ApiHelper::jsonValidationError($errors, $message);
+        return APIHelper::jsonValidationError($errors, $message, true, $exception);
     }
 }
 
@@ -161,7 +169,7 @@ if (!function_exists('api_no_content')) {
      */
     function api_no_content(): JsonResponse
     {
-        return ApiHelper::jsonNoContent();
+        return APIHelper::jsonNoContent();
     }
 }
 
@@ -171,11 +179,12 @@ if (!function_exists('api_bad_request')) {
      *
      * @param string $message
      * @param array $errors
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
-    function api_bad_request(string $message = 'Requête incorrecte', array $errors = []): JsonResponse
+    function api_bad_request(string $message = 'Requête incorrecte', array $errors = [], ?\Throwable $exception = null): JsonResponse
     {
-        return ApiHelper::jsonBadRequest($message, $errors);
+        return APIHelper::jsonBadRequest($message, $errors, true, $exception);
     }
 }
 
@@ -185,11 +194,12 @@ if (!function_exists('api_conflict')) {
      *
      * @param string $message
      * @param mixed $data
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
-    function api_conflict(string $message = 'Conflit détecté', mixed $data = null): JsonResponse
+    function api_conflict(string $message = 'Conflit détecté', mixed $data = null, ?\Throwable $exception = null): JsonResponse
     {
-        return ApiHelper::jsonConflict($message, $data);
+        return APIHelper::jsonConflict($message, $data, true, $exception);
     }
 }
 
@@ -198,11 +208,12 @@ if (!function_exists('api_service_unavailable')) {
      * Réponse 503 Service Unavailable
      *
      * @param string $message
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
-    function api_service_unavailable(string $message = 'Service temporairement indisponible'): JsonResponse
+    function api_service_unavailable(string $message = 'Service temporairement indisponible', ?\Throwable $exception = null): JsonResponse
     {
-        return ApiHelper::jsonServiceUnavailable($message);
+        return APIHelper::jsonServiceUnavailable($message, true, $exception);
     }
 }
 
@@ -212,10 +223,11 @@ if (!function_exists('api_internal_server_error')) {
      *
      * @param string $message
      * @param array $errors
+     * @param \Throwable|null $exception Exception à logger
      * @return JsonResponse
      */
-    function api_internal_server_error(string $message = 'Erreur interne du serveur', array $errors = []): JsonResponse
+    function api_internal_server_error(string $message = 'Erreur interne du serveur', array $errors = [], ?\Throwable $exception = null): JsonResponse
     {
-        return ApiHelper::jsonInternalServerError($message, $errors);
+        return APIHelper::jsonInternalServerError($message, $errors, true, $exception);
     }
 }
