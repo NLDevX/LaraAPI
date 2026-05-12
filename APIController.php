@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\HttpStatus;
+use App\Enums\HTTPStatus;
 use App\Support\Helpers\APIHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -17,8 +17,8 @@ abstract class APIController extends Controller
      * @var array<int>
      */
     protected array $excludedLogStatuses = [
-        HttpStatus::NO_CONTENT->value,
-        HttpStatus::NOT_MODIFIED->value,
+        HTTPStatus::NO_CONTENT->value,
+        HTTPStatus::NOT_MODIFIED->value,
     ];
 
     /**
@@ -35,12 +35,12 @@ abstract class APIController extends Controller
     /**
      * Détermine si la réponse doit être journalisée en fonction du statut.
      *
-     * @param int|HttpStatus $status Code HTTP
+     * @param int|HTTPStatus $status Code HTTP
      * @return bool
      */
-    protected function shouldLog(int|HttpStatus $status): bool
+    protected function shouldLog(int|HTTPStatus $status): bool
     {
-        $statusValue = $status instanceof HttpStatus ? $status->value : $status;
+        $statusValue = $status instanceof HTTPStatus ? $status->value : $status;
         return !in_array($statusValue, $this->excludedLogStatuses, true);
     }
 
@@ -48,7 +48,7 @@ abstract class APIController extends Controller
      * Réponse API générique.
      *
      * @param mixed          $data      Données de la réponse
-     * @param int|HttpStatus $status    Code HTTP (200 par défaut)
+     * @param int|HTTPStatus $status    Code HTTP (200 par défaut)
      * @param string         $message   Message descriptif
      * @param array          $errors    Liste des erreurs
      * @param array          $meta      Métadonnées additionnelles
@@ -59,7 +59,7 @@ abstract class APIController extends Controller
      */
     protected function jsonApiResponse(
         mixed $data = null,
-        int|HttpStatus $status = 200,
+        int|HTTPStatus $status = 200,
         string $message = '',
         array $errors = [],
         array $meta = [],
@@ -76,14 +76,14 @@ abstract class APIController extends Controller
      *
      * @param mixed          $data      Données de la réponse
      * @param string         $message   Message descriptif
-     * @param int|HttpStatus $status    Code HTTP (200 par défaut)
+     * @param int|HTTPStatus $status    Code HTTP (200 par défaut)
      * @param bool           $shouldLog Journaliser ou non
      * @return JsonResponse
      */
     protected function jsonSuccess(
         mixed $data = null,
         string $message = '',
-        int|HttpStatus $status = 200,
+        int|HTTPStatus $status = 200,
         bool $shouldLog = true
     ): JsonResponse {
         return APIHelper::jsonSuccess($data, $message, $status, $shouldLog && $this->shouldLog($status));
@@ -93,7 +93,7 @@ abstract class APIController extends Controller
      * Réponse d'erreur standardisée.
      *
      * @param string         $message   Message d'erreur
-     * @param int|HttpStatus $status    Code HTTP (400 par défaut)
+     * @param int|HTTPStatus $status    Code HTTP (400 par défaut)
      * @param array          $errors    Détails des erreurs
      * @param mixed          $data      Données supplémentaires
      * @param bool           $shouldLog Journaliser ou non
@@ -102,7 +102,7 @@ abstract class APIController extends Controller
      */
     protected function jsonError(
         string $message = '',
-        int|HttpStatus $status = 400,
+        int|HTTPStatus $status = 400,
         array $errors = [],
         mixed $data = null,
         bool $shouldLog = true,
@@ -126,7 +126,7 @@ abstract class APIController extends Controller
         array $extraMeta = [],
         bool $shouldLog = true
     ): JsonResponse {
-        return APIHelper::jsonPaginated($data, $message, $extraMeta, $shouldLog && $this->shouldLog(HttpStatus::OK));
+        return APIHelper::jsonPaginated($data, $message, $extraMeta, $shouldLog && $this->shouldLog(HTTPStatus::OK));
     }
 
     /**
@@ -142,7 +142,7 @@ abstract class APIController extends Controller
         string $message = 'Ressource créée avec succès',
         bool $shouldLog = true
     ): JsonResponse {
-        return APIHelper::jsonCreated($data, $message, $shouldLog && $this->shouldLog(HttpStatus::CREATED));
+        return APIHelper::jsonCreated($data, $message, $shouldLog && $this->shouldLog(HTTPStatus::CREATED));
     }
 
     /**
@@ -155,7 +155,7 @@ abstract class APIController extends Controller
      */
     protected function jsonUnauthorized(string $message = 'Non authentifié', bool $shouldLog = true, ?\Throwable $exception = null): JsonResponse
     {
-        return APIHelper::jsonUnauthorized($message, $shouldLog && $this->shouldLog(HttpStatus::UNAUTHORIZED), $exception);
+        return APIHelper::jsonUnauthorized($message, $shouldLog && $this->shouldLog(HTTPStatus::UNAUTHORIZED), $exception);
     }
 
     /**
@@ -168,7 +168,7 @@ abstract class APIController extends Controller
      */
     protected function jsonForbidden(string $message = 'Accès non autorisé', bool $shouldLog = true, ?\Throwable $exception = null): JsonResponse
     {
-        return APIHelper::jsonForbidden($message, $shouldLog && $this->shouldLog(HttpStatus::FORBIDDEN), $exception);
+        return APIHelper::jsonForbidden($message, $shouldLog && $this->shouldLog(HTTPStatus::FORBIDDEN), $exception);
     }
 
     /**
@@ -181,7 +181,7 @@ abstract class APIController extends Controller
      */
     protected function jsonNotFound(string $message = 'Ressource non trouvée', bool $shouldLog = true, ?\Throwable $exception = null): JsonResponse
     {
-        return APIHelper::jsonNotFound($message, $shouldLog && $this->shouldLog(HttpStatus::NOT_FOUND), $exception);
+        return APIHelper::jsonNotFound($message, $shouldLog && $this->shouldLog(HTTPStatus::NOT_FOUND), $exception);
     }
 
     /**
@@ -195,7 +195,7 @@ abstract class APIController extends Controller
      */
     protected function jsonValidationError(array $errors = [], string $message = 'Erreur de validation', bool $shouldLog = true, ?\Throwable $exception = null): JsonResponse
     {
-        return APIHelper::jsonValidationError($errors, $message, $shouldLog && $this->shouldLog(HttpStatus::UNPROCESSABLE_CONTENT), $exception);
+        return APIHelper::jsonValidationError($errors, $message, $shouldLog && $this->shouldLog(HTTPStatus::UNPROCESSABLE_CONTENT), $exception);
     }
 
     /**
@@ -219,7 +219,7 @@ abstract class APIController extends Controller
      */
     protected function jsonBadRequest(string $message = 'Requête incorrecte', array $errors = [], bool $shouldLog = true, ?\Throwable $exception = null): JsonResponse
     {
-        return APIHelper::jsonBadRequest($message, $errors, $shouldLog && $this->shouldLog(HttpStatus::BAD_REQUEST), $exception);
+        return APIHelper::jsonBadRequest($message, $errors, $shouldLog && $this->shouldLog(HTTPStatus::BAD_REQUEST), $exception);
     }
 
     /**
@@ -233,7 +233,7 @@ abstract class APIController extends Controller
      */
     protected function jsonConflict(string $message = 'Conflit détecté', mixed $data = null, bool $shouldLog = true, ?\Throwable $exception = null): JsonResponse
     {
-        return APIHelper::jsonConflict($message, $data, $shouldLog && $this->shouldLog(HttpStatus::CONFLICT), $exception);
+        return APIHelper::jsonConflict($message, $data, $shouldLog && $this->shouldLog(HTTPStatus::CONFLICT), $exception);
     }
 
     /**
@@ -246,7 +246,7 @@ abstract class APIController extends Controller
      */
     protected function jsonServiceUnavailable(string $message = 'Service temporairement indisponible', bool $shouldLog = true, ?\Throwable $exception = null): JsonResponse
     {
-        return APIHelper::jsonServiceUnavailable($message, $shouldLog && $this->shouldLog(HttpStatus::SERVICE_UNAVAILABLE), $exception);
+        return APIHelper::jsonServiceUnavailable($message, $shouldLog && $this->shouldLog(HTTPStatus::SERVICE_UNAVAILABLE), $exception);
     }
 
     /**
@@ -260,6 +260,6 @@ abstract class APIController extends Controller
      */
     protected function jsonInternalServerError(string $message = 'Erreur interne du serveur', array $errors = [], bool $shouldLog = true, ?\Throwable $exception = null): JsonResponse
     {
-        return APIHelper::jsonInternalServerError($message, $errors, $shouldLog && $this->shouldLog(HttpStatus::INTERNAL_SERVER_ERROR), $exception);
+        return APIHelper::jsonInternalServerError($message, $errors, $shouldLog && $this->shouldLog(HTTPStatus::INTERNAL_SERVER_ERROR), $exception);
     }
 }
