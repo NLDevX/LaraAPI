@@ -7,11 +7,11 @@ Ensemble de classes utilitaires pour standardiser les réponses JSON d'une API L
 ## Fonctionnalités
 
 - Réponses JSON structurées et uniformes sur tout le projet
-- Support complet des codes HTTP via l'enum `HttpStatus`
+- Support complet des codes HTTP via l'enum `HTTPStatus`
 - Journalisation automatique de chaque réponse (niveau adapté au code HTTP)
 - Gestion des réponses paginées avec métadonnées et liens
 - Fonctions globales `api_*` utilisables partout dans l'application
-- Contrôleur de base `ApiController` à étendre dans vos controllers
+- Contrôleur de base `APIController` à étendre dans vos controllers
 
 ---
 
@@ -19,10 +19,10 @@ Ensemble de classes utilitaires pour standardiser les réponses JSON d'une API L
 
 | Fichier | Emplacement |
 |---------|-------------|
-| Enum HTTP | `app/Enums/HttpStatus.php` |
-| Helper statique | `app/Support/Helpers/ApiHelper.php` |
-| Fonctions globales | `app/Support/Helpers/ApiHelperFunctions.php` |
-| Contrôleur de base | `app/Core/Controllers/ApiController.php` |
+| Enum HTTP | `app/Enums/HTTPStatus.php` |
+| Helper statique | `app/Support/Helpers/APIHelper.php` |
+| Fonctions globales | `app/Support/Helpers/APIHelperFunctions.php` |
+| Contrôleur de base | `app/Core/Controllers/APIController.php` |
 
 ---
 
@@ -35,7 +35,7 @@ Ensemble de classes utilitaires pour standardiser les réponses JSON d'une API L
 ```json
 "autoload": {
     "files": [
-        "app/Support/Helpers/ApiHelperFunctions.php"
+        "app/Support/Helpers/APIHelperFunctions.php"
     ]
 }
 ```
@@ -66,12 +66,12 @@ composer dump-autoload
 
 ### Via le contrôleur de base
 
-La façon recommandée. Étendez `ApiController` dans vos controllers :
+La façon recommandée. Étendez `APIController` dans vos controllers :
 
 ```php
-use App\Core\Controllers\ApiController;
+use App\Core\Controllers\APIController;
 
-class UserController extends ApiController
+class UserController extends APIController
 {
     public function index()
     {
@@ -113,11 +113,11 @@ return api_no_content();
 ### Via le helper statique
 
 ```php
-use App\Support\Helpers\ApiHelper;
+use App\Support\Helpers\APIHelper;
 
-return ApiHelper::jsonSuccess($data, 'Opération réussie');
-return ApiHelper::jsonError('Accès refusé', HttpStatus::FORBIDDEN);
-return ApiHelper::jsonPaginated($paginator, 'Résultats');
+return APIHelper::jsonSuccess($data, 'Opération réussie');
+return APIHelper::jsonError('Accès refusé', HTTPStatus::FORBIDDEN);
+return APIHelper::jsonPaginated($paginator, 'Résultats');
 ```
 
 ---
@@ -209,36 +209,36 @@ Les clés `meta`, `links` et `errors` sont omises de la réponse si elles sont v
 
 | Fonction | Équivalent |
 |----------|-----------|
-| `api_response(...)` | `ApiHelper::jsonApiResponse(...)` |
-| `api_success(...)` | `ApiHelper::jsonSuccess(...)` |
-| `api_error(...)` | `ApiHelper::jsonError(...)` |
-| `api_paginated(...)` | `ApiHelper::jsonPaginated(...)` |
-| `api_created(...)` | `ApiHelper::jsonCreated(...)` |
-| `api_unauthorized(...)` | `ApiHelper::jsonUnauthorized(...)` |
-| `api_forbidden(...)` | `ApiHelper::jsonForbidden(...)` |
-| `api_not_found(...)` | `ApiHelper::jsonNotFound(...)` |
-| `api_validation_error(...)` | `ApiHelper::jsonValidationError(...)` |
-| `api_no_content()` | `ApiHelper::jsonNoContent()` |
-| `api_bad_request(...)` | `ApiHelper::jsonBadRequest(...)` |
-| `api_conflict(...)` | `ApiHelper::jsonConflict(...)` |
-| `api_service_unavailable(...)` | `ApiHelper::jsonServiceUnavailable(...)` |
-| `api_internal_server_error(...)` | `ApiHelper::jsonInternalServerError(...)` |
+| `api_response(...)` | `APIHelper::jsonApiResponse(...)` |
+| `api_success(...)` | `APIHelper::jsonSuccess(...)` |
+| `api_error(...)` | `APIHelper::jsonError(...)` |
+| `api_paginated(...)` | `APIHelper::jsonPaginated(...)` |
+| `api_created(...)` | `APIHelper::jsonCreated(...)` |
+| `api_unauthorized(...)` | `APIHelper::jsonUnauthorized(...)` |
+| `api_forbidden(...)` | `APIHelper::jsonForbidden(...)` |
+| `api_not_found(...)` | `APIHelper::jsonNotFound(...)` |
+| `api_validation_error(...)` | `APIHelper::jsonValidationError(...)` |
+| `api_no_content()` | `APIHelper::jsonNoContent()` |
+| `api_bad_request(...)` | `APIHelper::jsonBadRequest(...)` |
+| `api_conflict(...)` | `APIHelper::jsonConflict(...)` |
+| `api_service_unavailable(...)` | `APIHelper::jsonServiceUnavailable(...)` |
+| `api_internal_server_error(...)` | `APIHelper::jsonInternalServerError(...)` |
 
 ---
 
-## Enum HttpStatus
+## Enum HTTPStatus
 
-L'enum `HttpStatus` couvre l'intégralité des codes HTTP (1xx à 5xx) et expose une méthode `message()` qui retourne la description en français du code.
+L'enum `HTTPStatus` couvre l'intégralité des codes HTTP (1xx à 5xx) et expose une méthode `message()` qui retourne la description en français du code.
 
 ```php
-use App\Enums\HttpStatus;
+use App\Enums\HTTPStatus;
 
-HttpStatus::OK->value;        // 200
-HttpStatus::NOT_FOUND->value; // 404
-HttpStatus::OK->message();    // 'Requête traitée avec succès.'
+HTTPStatus::OK->value;        // 200
+HTTPStatus::NOT_FOUND->value; // 404
+HTTPStatus::OK->message();    // 'Requête traitée avec succès.'
 
 // Utilisable directement dans les méthodes helper
-return $this->jsonError('Introuvable', HttpStatus::NOT_FOUND);
+return $this->jsonError('Introuvable', HTTPStatus::NOT_FOUND);
 ```
 
 ---
@@ -260,7 +260,7 @@ Format de log :
 {"endpoint":"/api/users","method":"GET","ip":"127.0.0.1","user_id":1,"status":200,"data_count":15}
 ```
 
-> Les codes `204 No Content` et `304 Not Modified` ne sont pas journalisés par défaut depuis `ApiController`.
+> Les codes `204 No Content` et `304 Not Modified` ne sont pas journalisés par défaut depuis `APIController`.
 
 ---
 
