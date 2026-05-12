@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Compatible PHP 8.4 / Laravel 12
  * Fournit une méthode message() pour récupérer la description du statut
  */
-enum HttpStatus: int
+enum HTTPStatus: int
 {
     // 1xx Informational
     case CONTINUE = Response::HTTP_CONTINUE;
