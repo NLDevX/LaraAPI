@@ -2,7 +2,7 @@
 
 use App\Support\Helpers\APIHelper;
 use Illuminate\Http\JsonResponse;
-use App\Enums\HttpStatus;
+use App\Enums\HTTPStatus;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -11,7 +11,7 @@ if (!function_exists('api_response')) {
      * Helper principal pour les réponses API
      *
      * @param mixed $data
-     * @param int|HttpStatus $status
+     * @param int|HTTPStatus $status
      * @param string $message
      * @param array $errors
      * @param array $meta
@@ -21,7 +21,7 @@ if (!function_exists('api_response')) {
      */
     function api_response(
         mixed $data = null,
-        int|HttpStatus $status = 200,
+        int|HTTPStatus $status = 200,
         string $message = '',
         array $errors = [],
         array $meta = [],
@@ -38,13 +38,13 @@ if (!function_exists('api_success')) {
      *
      * @param mixed $data
      * @param string $message
-     * @param int|HttpStatus $status
+     * @param int|HTTPStatus $status
      * @return JsonResponse
      */
     function api_success(
         mixed $data = null,
         string $message = '',
-        int|HttpStatus $status = 200
+        int|HTTPStatus $status = 200
     ): JsonResponse {
         return APIHelper::jsonSuccess($data, $message, $status);
     }
@@ -55,7 +55,7 @@ if (!function_exists('api_error')) {
      * Réponse d'erreur
      *
      * @param string $message
-     * @param int|HttpStatus $status
+     * @param int|HTTPStatus $status
      * @param array $errors
      * @param mixed $data
      * @param \Throwable|null $exception Exception à logger
@@ -63,7 +63,7 @@ if (!function_exists('api_error')) {
      */
     function api_error(
         string $message = '',
-        int|HttpStatus $status = 400,
+        int|HTTPStatus $status = 400,
         array $errors = [],
         mixed $data = null,
         ?\Throwable $exception = null
